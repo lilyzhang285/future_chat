@@ -7,6 +7,71 @@ export default function Home() {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const getSystemPrompt = (role, prevMessages) => {
+    const basePrompt = {
+      'ux': `你是一个用户体验专家。请基于用户需求和其他设计师的意见，从用户体验角度提供具体的设计建议。
+重点关注：
+1. 用户交互和流程优化
+2. 使用场景和用户需求分析
+3. 功能布局和信息架构
+4. 操作便利性和直观性
+
+请具体说明：
+- 用户痛点分析
+- 交互设计方案
+- 功能布局建议
+- 与其他设计师方案的协调建议`,
+
+      'industrial': `你是一个造型设计师。请基于用户需求、用户体验专家的建议，从产品造型角度提供具体的设计建议。
+重点关注：
+1. 产品形态和结构设计
+2. 空间布局和尺寸规划
+3. 功能性与美观性的平衡
+4. 制造可行性
+
+请具体说明：
+- 造型设计方案
+- 结构布局详细说明
+- 关键尺寸和比例
+- 与其他设计师方案的协调建议`,
+
+      'cmf': `你是一个CMF设计师。请基于用户需求、用户体验专家和造型设计师的建议，从材料、颜色和工艺角度提供具体的设计建议。
+重点关注：
+1. 材料选择和搭配
+2. 色彩规划和效果
+3. 工艺可行性
+4. 成本控制
+
+请具体说明：
+- 材料方案清单
+- 色彩搭配方案
+- 与其他设计师方案的协调建议`
+    };
+
+    // 获取之前所有的对话内容
+    const previousDiscussion = prevMessages
+      .filter(msg => !msg.isSent)
+      .map(msg => ({
+        role: "assistant",
+        content: `[${msg.roleType === 'ux' ? '用户体验专家' : 
+                     msg.roleType === 'industrial' ? '造型设计师' : 
+                     'CMF设计师'}] ${msg.content}`
+      }));
+
+    return `${basePrompt[role]}
+
+当前设计讨论的上下文：
+${previousDiscussion.map(msg => msg.content).join('\n')}
+
+请基于以上讨论和你的专业角度，提供详细的设计建议。你的建议应该：
+1. 具体且可执行
+2. 与其他设计师的建议相互呼应和补充
+3. 指出潜在问题和解决方案
+4. 提供明确的参数和标准
+
+最终目标是形成一个完整、可行的设计方案。`;
+  };
+
   const sendMessage = async () => {
     const messageInput = document.getElementById('message-input');
     const content = messageInput.value.trim();
@@ -21,158 +86,87 @@ export default function Home() {
       messageInput.value = '';
 
       try {
-        // 检查 API key 是否设置
-        const apiKey = process.env.NEXT_PUBLIC_SILICON_API_KEY;
-        if (!apiKey) {
-          throw new Error('API key 未设置');
-        }
+        const apiKey = 'sk-vriszoxzcmjdbsoqikrbwqjqcltycylerdmhzjxxivurfzve';
+        const roleTypes = ['ux', 'industrial', 'cmf'];
 
-        // 创建一个新的消息对象用于存储AI回复
-        const aiMessageId = Date.now();
-        setMessages(prev => [...prev, { id: aiMessageId, content: '', isSent: false }]);
+        // 一次性添加三个角色的空消息框
+        const roleMessages = roleTypes.map(role => ({
+          id: Date.now() + Math.random(),
+          content: '',
+          isSent: false,
+          roleType: role
+        }));
+        
+        setMessages(prev => [...prev, ...roleMessages]);
 
-        // 调用 SiliconFlow API (流式传输)
-        const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model: "Qwen/Qwen2.5-7B-Instruct",
-            messages: [
-              {
-                role: "system",
-                content: "你是一位专业的室内设计师，擅长软装搭配和色彩设计。你需要：1. 根据用户的需求提供专业的配色方案建议；2. 解释每个配色方案的设计理念和情感效果；3. 考虑空间的功能性和整体协调性；4. 适时推荐合适的软装饰品来强化配色效果。请用专业且易懂的语言回答用户的问题。"
-              },
-              {
-                role: "user",
-                content: content
-              }
-            ],
-            stream: true, // 启用流式传输
-            temperature: 0.7,
-            max_tokens: 2000
-          })
-        });
+        // 依次获取每个角色的回复
+        for (let i = 0; i < roleTypes.length; i++) {
+          const role = roleTypes[i];
+          const currentMessage = roleMessages[i];
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-        }
+          // 调用API获取响应
+          const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: "internlm/internlm2_5-7b-chat",
+              messages: [
+                {
+                  role: "system",
+                  content: getSystemPrompt(role, messages)
+                },
+                {
+                  role: "user",
+                  content: content
+                }
+              ],
+              stream: true,
+              temperature: 0.7,
+              max_tokens: 2000
+            })
+          });
 
-        // 处理流式响应
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let aiResponse = '';
+          // 处理流式响应
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let aiResponse = '';
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          // 解码收到的数据
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-          
-          // 处理每一行数据
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') continue;
-              
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices[0]?.delta?.content || '';
-                aiResponse += content;
-                
-                // 更新UI中的消息
-                setMessages(prev => prev.map(msg => 
-                  msg.id === aiMessageId 
-                    ? { ...msg, content: aiResponse }
-                    : msg
-                ));
-              } catch (e) {
-                console.error('解析响应数据失败:', e);
-              }
-            }
-          }
-        }
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
 
-        // 在设计师回复完成后，请求教授的点评
-        const professorResponse = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model: "Qwen/Qwen2.5-7B-Instruct",
-            messages: [
-              {
-                role: "system",
-                content: "你是一位资深的室内设计学院教授，有着丰富的教学和实践经验。你的任务是对室内设计师的方案进行专业的点评：1. 分析设计方案的优点和创新点；2. 指出可能存在的问题或改进空间；3. 从专业角度补充建议；4. 对设计理念的可行性进行评估。请用专业但平易近人的语气进行点评。"
-              },
-              {
-                role: "user",
-                content: `请点评以下设计师的方案：\n${aiResponse}`
-              }
-            ],
-            stream: true,
-            temperature: 0.7,
-            max_tokens: 2000
-          })
-        });
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
 
-        // 处理教授点评的流式响应
-        const professorReader = professorResponse.body.getReader();
-        const professorDecoder = new TextDecoder();
-        let professorComment = '';
-        const professorMessageId = Date.now() + 1;
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices[0]?.delta?.content || '';
+                  aiResponse += content;
 
-        // 添加教授消息到界面
-        setMessages(prev => [...prev, { id: professorMessageId, content: '', isSent: false, isProfessor: true }]);
-
-        while (true) {
-          const { done, value } = await professorReader.read();
-          if (done) break;
-
-          const chunk = professorDecoder.decode(value);
-          const lines = chunk.split('\n');
-          
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') continue;
-              
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices[0]?.delta?.content || '';
-                professorComment += content;
-                
-                // 更新UI中的教授消息
-                setMessages(prev => prev.map(msg => 
-                  msg.id === professorMessageId 
-                    ? { ...msg, content: professorComment }
-                    : msg
-                ));
-              } catch (e) {
-                console.error('解析教授响应数据失败:', e);
+                  // 更新对应角色的消息内容
+                  setMessages(prev => prev.map(msg => 
+                    msg.id === currentMessage.id
+                      ? { ...msg, content: aiResponse }
+                      : msg
+                  ));
+                } catch (e) {
+                  console.error('解析响应数据失败:', e);
+                }
               }
             }
           }
         }
-
       } catch (error) {
         console.error('Error details:', error);
-        
-        let errorMessage = "抱歉，发生了一些错误。请稍后重试。";
-        if (error.message === 'API key 未设置') {
-          errorMessage = "请先设置 API key";
-        } else if (error.message.includes('HTTP error')) {
-          errorMessage = "API 调用失败，请检查网络连接";
-        }
-        
-        setMessages(prev => [...prev, { content: errorMessage, isSent: false }]);
+        setMessages(prev => [...prev, { content: "抱歉，发生了一些错误。请稍后重试。", isSent: false }]);
       } finally {
         setIsLoading(false);
       }
@@ -182,7 +176,7 @@ export default function Home() {
   return (
     <div className={styles.chatContainer}>
       <div className={styles.chatHeader}>
-        <h2>室内设计师 AI 助手 & 教授点评</h2>
+        <h2>CoDesign Lab</h2>
       </div>
       <div className={styles.chatMessages}>
         {messages.map((message, index) => (
@@ -190,11 +184,14 @@ export default function Home() {
             key={index}
             className={`${styles.message} ${
               message.isSent ? styles.sent : styles.received
-            } ${message.isProfessor ? styles.professor : ''}`}
+            }`}
+            data-role={message.roleType}
           >
             {!message.isSent && (
               <div className={styles.messageRole}>
-                {message.isProfessor ? '设计学院教授' : '室内设计师'}
+                {message.roleType === 'ux' ? '用户体验专家' : 
+                 message.roleType === 'industrial' ? '造型设计师' : 
+                 message.roleType === 'cmf' ? 'CMF设计师' : '用户'}
               </div>
             )}
             <div className={styles.messageContent}>
