@@ -1,17 +1,16 @@
 .chatContainer {
-    max-width: 1200px;
-    margin: 0 auto;
+    flex: 1;
+    min-width: 900px;
     height: 100vh;
     display: flex;
     flex-direction: column;
     background-color: #ffffff;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
     position: relative;
     overflow: hidden;
 }
 
 .chatHeader {
-    padding: 24px;
+    padding: 32px 40px;
     background: linear-gradient(135deg, #1a237e, #0d47a1);
     position: relative;
     text-align: center;
@@ -31,7 +30,7 @@
 
 .chatHeader h2 {
     color: white;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 700;
     margin: 0;
     letter-spacing: 1px;
@@ -40,14 +39,14 @@
 
 .chatMessages {
     flex: 1;
-    padding: 32px;
+    padding: 40px 60px;
     overflow-y: auto;
     background: linear-gradient(to bottom, #f8f9fa, #ffffff);
 }
 
 .message {
-    margin-bottom: 28px;
-    max-width: 70%;
+    margin-bottom: 32px;
+    max-width: 85%;
     clear: both;
     animation: fadeIn 0.3s ease-in-out;
     position: relative;
@@ -80,10 +79,10 @@
 }
 
 .messageContent {
-    padding: 16px 20px;
+    padding: 20px 24px;
     word-wrap: break-word;
     line-height: 1.6;
-    font-size: 15px;
+    font-size: 16px;
 }
 
 .messageRole {
@@ -137,11 +136,11 @@
 }
 
 .chatInput {
-    padding: 24px 32px;
+    padding: 28px 40px;
     background: #ffffff;
-    border-top: 1px solid rgba(0,0,0,0.08);
+    border-top: 1px solid #e0e0e0;
     display: flex;
-    gap: 16px;
+    gap: 20px;
     align-items: center;
     position: relative;
 }
@@ -158,40 +157,35 @@
 
 .chatInput input {
     flex: 1;
-    padding: 14px 24px;
+    padding: 16px 24px;
+    font-size: 16px;
+    border-radius: 12px;
     border: 2px solid #e0e0e0;
-    border-radius: 28px;
-    outline: none;
-    font-size: 15px;
     transition: all 0.3s ease;
     background: #f8f9fa;
 }
 
 .chatInput input:focus {
     border-color: #2196f3;
-    background: #ffffff;
-    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+    outline: none;
 }
 
 .chatInput button {
-    padding: 14px 32px;
+    padding: 16px 32px;
+    font-size: 16px;
+    border-radius: 12px;
     background: linear-gradient(135deg, #1976d2, #2196f3);
     color: white;
     border: none;
-    border-radius: 28px;
     cursor: pointer;
-    font-weight: 600;
-    font-size: 15px;
     transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.25);
+    font-weight: 500;
 }
 
 .chatInput button:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.35);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.25);
 }
 
 .chatInput button:disabled {
@@ -253,5 +247,168 @@
 
 .chatMessages::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.2);
+}
+
+/* 方案专家的样式 */
+.received[data-role="summary"] {
+    --role-color: #f57c00;
+    max-width: 85%; /* 让总结内容更宽一些 */
+}
+
+.received[data-role="summary"] .messageRole {
+    color: var(--role-color);
+}
+
+.received[data-role="summary"] .messageContent {
+    background: linear-gradient(to right, #ffffff, #fff8e1);
+    border-left: 4px solid var(--role-color);
+}
+
+/* 方案专家的 Markdown 样式优化 */
+.received[data-role="summary"] .messageContent :global(h2) {
+    color: #f57c00;
+    font-size: 1.2em;
+    margin: 16px 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid rgba(245, 124, 0, 0.2);
+}
+
+.received[data-role="summary"] .messageContent :global(h3) {
+    color: #f57c00;
+    font-size: 1.1em;
+    margin: 14px 0 10px 0;
+}
+
+.received[data-role="summary"] .messageContent :global(ul) {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.received[data-role="summary"] .messageContent :global(li) {
+    margin: 4px 0;
+    line-height: 1.5;
+}
+
+/* 设计提示词的特殊样式 */
+.received[data-role="summary"] .messageContent :global(p:last-child) {
+    background: #fff3e0;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 0.9em;
+    color: #e65100;
+    line-height: 1.6;
+    margin-top: 16px;
+}
+
+/* 添加角色选择器样式 */
+.roleSelector {
+    margin-top: 12px;
+}
+
+.roleSelector select {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.roleSelector select:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.roleSelector select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.roleSelector select option {
+    background: #ffffff;
+    color: #333333;
+    padding: 8px;
+}
+
+.headerTip {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    margin: 8px 0 0 0;
+    font-weight: 400;
+}
+
+/* 添加历史记录侧边栏样式 */
+.container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  background: #f0f2f5;
+}
+
+.sidebar {
+  width: 320px;
+  min-width: 320px;
+  background: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebarHeader {
+  padding: 20px;
+  background: #1a237e;
+  color: white;
+}
+
+.sidebarHeader h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.historyList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.historyItem {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0;
+}
+
+.historyItem:hover {
+  background: #f8f9fa;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.historyItem.active {
+  background: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.historyItemTitle {
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #1a237e;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.historyItemDate {
+  font-size: 12px;
+  color: #757575;
 }
  
